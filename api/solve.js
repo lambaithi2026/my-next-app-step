@@ -46,8 +46,8 @@ export default async function handler(req) {
     const data = await response.json();
     console.log(JSON.stringify(data));
 
-    const answer =
-      data?.choices?.[0]?.message?.content || "不明";
+const answer =
+  data?.output?.[0]?.content?.[0]?.text || "不明";
 
     return new Response(JSON.stringify({ answer }), {
       headers: { "Content-Type": "application/json" },
