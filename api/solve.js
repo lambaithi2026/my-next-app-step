@@ -44,6 +44,7 @@ export default async function handler(req) {
     });
 
     const data = await response.json();
+    console.log(JSON.stringify(data));
 
     const answer =
       data?.choices?.[0]?.message?.content || "不明";
