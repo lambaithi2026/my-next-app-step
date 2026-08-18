@@ -4,7 +4,7 @@ export const config = {
 
 export default async function handler(req) {
   try {
-    const { image } = await req.json();
+    const { image, prompt } = await req.json();
 
     if (!image) {
       return new Response(
@@ -22,7 +22,12 @@ export default async function handler(req) {
       );
     }
 
-    // 🔥 GỌI OPENAI (ĐÚNG FORMAT CHO IMAGE)
+    // ✅ FIX: đảm bảo luôn có prefix cho ảnh
+    const base64Image = image.startsWith("data:")
+      ? image
+      : `data:image/jpeg;base64,${image}`;
+
+    // ✅ GỌI OPENAI (chuẩn cho ảnh)
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
@@ -38,11 +43,12 @@ export default async function handler(req) {
               {
                 type: "input_text",
                 text:
-                  "画像内の選択式問題を読み取り、必ず次の形式だけで答えよ：『問題番号の回答は番号のみ』。例：問題2の回答は3。説明禁止。1行のみ。",
+                  prompt ||
+                  "画像内の選択式問題を読み取り、必ず『問題番号の回答は番号のみ』の形式で1行だけ答えよ。説明禁止。",
               },
               {
                 type: "input_image",
-                image_url: `data:image/jpeg;base64,${image}`,
+                image_url: base64Image,
               },
             ],
           },
@@ -52,11 +58,10 @@ export default async function handler(req) {
 
     const data = await response.json();
 
-    // 🔍 DEBUG (nếu cần xem log trên Vercel)
-    console.log(JSON.stringify(data));
-
+    // 🔍 lấy câu trả lời
     const answer =
-      data?.output?.[0]?.content?.[0]?.text || "再読込み開始します";
+      data?.output?.[0]?.content?.[0]?.text ||
+      "再読込み開始します";
 
     return new Response(JSON.stringify({ answer }), {
       headers: { "Content-Type": "application/json" },
